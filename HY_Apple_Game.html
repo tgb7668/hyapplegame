@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>사과게임 🍎 온라인 랭킹</title>
+<style>
+    body { font-family: 'Malgun Gothic', sans-serif; text-align: center; margin: 0; background: #fff; }
+    h2 { margin-top: 20px; }
+    #game-controls { margin: 20px 0; }
+    input#username { padding: 8px; border: 1px solid #ccc; border-radius: 4px; width: 150px; }
+    button { padding: 8px 16px; cursor: pointer; border-radius: 4px; border: 1px solid #999; background: #fff; }
+    #startBtn { background: #4caf50; color: #fff; border: none; font-weight: bold; }
+
+    /* 보드 설정: 외곽선만 강조 */
+    #board {
+        display: grid;
+        grid-template-columns: repeat(15, 52px);
+        grid-template-rows: repeat(10, 52px);
+        justify-content: center;
+        margin: 20px auto;
+        border: 3px solid #333; 
+        width: max-content;
+        background: #fff;
+        user-select: none;
+    }
+
+    .cell {
+        width: 52px; height: 52px;
+        display: flex; align-items: center; justify-content: center;
+        position: relative;
+        border: none;
+    }
+
+    .cell img {
+        position: absolute; width: 90%; height: 90%;
+        object-fit: contain; opacity: 0.4; z-index: 0; pointer-events: none;
+    }
+
+    .cell span {
+        position: relative; z-index: 1;
+        color: #000; font-size: 24px; font-weight: bold;
+    }
+
+    .selected {
+        background-color: rgba(76, 175, 80, 0.3);
+        outline: 2px solid #4caf50;
+        z-index: 5;
+    }
+
+    #info-panel { font-size: 20px; margin-bottom: 10px; font-weight: bold; }
+
+    /* 랭킹 화면 모달 */
+    #end {
+        display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.9); color: #fff;
+        flex-direction: column; align-items: center; justify-content: center; z-index: 100;
+    }
+
+    #rankingBox {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 20px; border-radius: 10px;
+        width: 280px; margin-top: 15px;
+    }
+
+    .rank-item {
+        display: flex; justify-content: space-between;
+        padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+</style>
+</head>
+<body>
+
+<h2>🍎 온라인 사과게임</h2>
+
+<div id="game-controls">
+    <input id="username" placeholder="닉네임 입력">
+    <button id="startBtn">게임 시작</button>
+</div>
+
+<div id="game" style="display:none">
+    <div id="info-panel">⏰ <span id="timer">120</span> | 🏆 점수: <span id="score">0</span></div>
+    <div id="board"></div>
+</div>
+
+<div id="end">
+    <h3 id="endMsg">게임 종료!</h3>
+    <div id="finalScore" style="font-size: 22px; margin-bottom: 10px;"></div>
+    
+    <div id="rankingBox">
+        <h4 style="margin:0 0 10px 0; color: #ffeb3b;">🌍 실시간 온라인 TOP 10</h4>
+        <div id="rankingList">데이터 동기화 중...</div>
+    </div>
+    
+    <button onclick="location.reload()" style="margin-top: 20px; padding: 10px 20px;">다시 시작</button>
+</div>
+
+<audio id="bgm" src="bgm.mp3" loop></audio>
+
+<script>
+// ⚠️ 여기에 본인이 배포한 웹 앱 URL을 넣으세요!
+const RANKING_URL = "https://script.google.com/macros/s/AKfycbyYXtYHm6DJIKDuyy1DhuN1n4Qmf3mk5X8lE36Za5-05uGT1rAJ8HeKkPGLKsYX_enGlg/exec";
+const TILE_IMAGE = "tile.png"; 
+
+const ROWS = 10, COLS = 15, TARGET = 10;
+let board = [], cells = [], selected = [];
+let score = 0, time = 120, timerInterval, gameOver = false;
+let isDragging = false, startCell = null, endCell = null;
+
+const bgm = document.getElementById("bgm");
+
+document.getElementById("startBtn").onclick = () => {
+    const name = document.getElementById("username").value;
+    if (!name) { alert("이름을 입력해 주세요!"); return; }
+    
+    document.getElementById("game-controls").style.display = "none";
+    document.getElementById("game").style.display = "block";
+    init();
+    startTimer();
+    bgm.play().catch(() => {});
+};
+
+function init() {
+    const b = document.getElementById("board");
+    b.innerHTML = "";
+    board = []; cells = [];
+    for (let r = 0; r < ROWS; r++) {
+        board[r] = [];
+        for (let c = 0; c < COLS; c++) {
+            const val = Math.floor(Math.random() * 9) + 1;
+            board[r][c] = val;
+            const cell = document.createElement("div");
+            cell.className = "cell";
+            cell.dataset.r = r; cell.dataset.c = c;
+            
+            const img = document.createElement("img");
+            img.src = TILE_IMAGE;
+            cell.appendChild(img);
+            
+            const span = document.createElement("span");
+            span.textContent = val;
+            cell.appendChild(span);
+            
+            b.appendChild(cell);
+            cells.push(cell);
+        }
+    }
+}
+
+// 드래그 로직
+document.addEventListener("mousedown", e => {
+    if (gameOver) return;
+    const cell = e.target.closest('.cell');
+    if (!cell) return;
+    isDragging = true;
+    startCell = [+cell.dataset.r, +cell.dataset.c];
+    endCell = startCell;
+    update();
+});
+
+document.addEventListener("mousemove", e => {
+    if (!isDragging || gameOver) return;
+    const el = document.elementFromPoint(e.clientX, e.clientY);
+    const cell = el?.closest('.cell');
+    if (!cell) return;
+    const r = +cell.dataset.r, c = +cell.dataset.c;
+    if (endCell[0] === r && endCell[1] === c) return;
+    endCell = [r, c];
+    update();
+});
+
+window.addEventListener("mouseup", () => {
+    if (!isDragging) return;
+    isDragging = false;
+    const sum = selected.reduce((a, [r, c]) => a + board[r][c], 0);
+    if (sum === TARGET) {
+        selected.forEach(([r, c]) => {
+            board[r][c] = 0;
+            cells[r * COLS + c].querySelector("span").textContent = "";
+            cells[r * COLS + c].querySelector("img").style.opacity = "0.05";
+        });
+        score += selected.length;
+        document.getElementById("score").textContent = score;
+    }
+    cells.forEach(c => c.classList.remove("selected"));
+    selected = [];
+});
+
+function update() {
+    const [r1, c1] = startCell;
+    const [r2, c2] = endCell;
+    const minR = Math.min(r1, r2), maxR = Math.max(r1, r2);
+    const minC = Math.min(c1, c2), maxC = Math.max(c1, c2);
+    cells.forEach(c => c.classList.remove("selected"));
+    selected = [];
+    for (let r = minR; r <= maxR; r++) {
+        for (let c = minC; c <= maxC; c++) {
+            if (board[r][c] !== 0) {
+                selected.push([r, c]);
+                cells[r * COLS + c].classList.add("selected");
+            }
+        }
+    }
+}
+
+function startTimer() {
+    clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+        time--;
+        document.getElementById("timer").textContent = time;
+        if (time <= 0) endGame();
+    }, 1000);
+}
+
+async function endGame() {
+    gameOver = true;
+    clearInterval(timerInterval);
+    bgm.pause();
+    
+    const nickname = document.getElementById("username").value;
+    document.getElementById("end").style.display = "flex";
+    document.getElementById("finalScore").textContent = nickname + "님의 점수: " + score;
+    
+    try {
+        // 구글 시트로 점수 전송 및 랭킹 수신
+        const res = await fetch(`${RANKING_URL}?name=${encodeURIComponent(nickname)}&score=${score}`);
+        const data = await res.json();
+        
+        let html = "";
+        data.forEach((item, i) => {
+            html += `<div class="rank-item">
+                        <span>${i + 1}위. ${item.name}</span>
+                        <span style="color:#4caf50;">${item.score}점</span>
+                     </div>`;
+        });
+        document.getElementById("rankingList").innerHTML = html || "데이터가 없습니다.";
+    } catch (e) {
+        document.getElementById("rankingList").textContent = "랭킹 로드 실패";
+    }
+}
+</script>
+</body>
+</html>
