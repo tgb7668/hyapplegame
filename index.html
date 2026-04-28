@@ -5,144 +5,139 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>🍎 흐융사과게임 🍎</title>
 <style>
-    /* 배경 설정: 3개의 큰 사과 이미지를 전략적으로 배치 */
-    body {
-        font-family: 'Malgun Gothic', sans-serif;
-        text-align: center;
-        margin: 0;
-        background-color: #ffffff;
-        /* 🌟 세 개의 배경 이미지를 각각 불러옴 */
-        background-image: url('tile.png'), url('tile.png'), url('tile.png');
-        /* 🌟 위치: 왼쪽 중앙, 오른쪽 중앙, 하단 중앙 배치 */
-        background-position: left -50px center, right -50px center, center bottom -100px;
-        background-repeat: no-repeat;
-        /* 🌟 크기: 화면 높이의 70% 정도로 크게 설정해서 꽉 차 보임 */
-        background-size: 40% auto, 40% auto, 50% auto;
-        background-attachment: fixed;
-        overflow-x: hidden; /* 배경이 커서 옆으로 밀리는 현상 방지 */
-    }
+   /* 배경 설정: 3개의 큰 사과 이미지 배치 */
+body {
+    font-family: 'Malgun Gothic', sans-serif;
+    text-align: center;
+    margin: 0;
+    background-color: #ffffff;
+    background-image: url('tile.png'), url('tile.png'), url('tile.png');
+    background-position: left -50px center, right -50px center, center bottom -100px;
+    background-repeat: no-repeat;
+    background-size: 40% auto, 40% auto, 50% auto;
+    background-attachment: fixed;
+    overflow-x: hidden;
+}
 
-    /* 제목 스타일: 중앙 정렬 및 여백 */
-    h2 { 
-        margin-top: 50px; 
-        margin-bottom: 20px;
-        background: rgba(255,255,255,0.8);
-        display: inline-block; 
-        padding: 10px 30px; 
-        border-radius: 15px;
-        position: relative;
-        z-index: 20;
-        width: auto;
-    }
+/* 🌟 제목: display를 block으로 하여 무조건 한 줄 차지 */
+h2 { 
+    display: block; 
+    margin: 50px auto 20px auto; 
+    background: rgba(255,255,255,0.8);
+    padding: 10px 30px; 
+    border-radius: 15px;
+    width: fit-content; 
+    position: relative;
+    z-index: 20;
+}
 
-/* 컨트롤러 컨테이너: 세로 배치 설정 */
-    #game-controls { 
-        margin: 0 auto 20px auto; 
-        background: rgba(255,255,255,0.8);
-        display: flex;            /* Flexbox 적용 */
-        flex-direction: column;   /* 세로 방향으로 정렬 */
-        align-items: center;      /* 수평 중앙 정렬 */
-        gap: 15px;                /* 요소 사이의 간격 */
-        padding: 30px;
-        border-radius: 15px;
-        position: relative;
-        z-index: 20;
-        width: max-content;       /* 내용물 너비에 맞춤 */    
-    }
+/* 🌟 컨트롤러: 중복을 제거하고 flex-direction: column 적용 */
+#game-controls { 
+    display: flex;             /* 수평/수직 제어를 위해 flex 사용 */
+    flex-direction: column;    /* 세로 방향(줄바꿈)으로 배치 */
+    align-items: center;       /* 가로 중앙 정렬 */
+    gap: 15px;                 /* 요소 사이 간격 */
+    margin: 0 auto 20px auto; 
+    background: rgba(255,255,255,0.8);
+    padding: 30px;
+    border-radius: 15px;
+    position: relative;
+    z-index: 20;
+    width: fit-content;        
+}
 
-/* 입력창과 버튼의 너비를 동일하게 맞춤 (선택사항) */
-    #username, #startBtn {
-        width: 200px;
-        box-sizing: border-box;
-    }
+/* 🌟 입력창과 버튼 스타일 */
+input#username { 
+    padding: 12px; 
+    border: 1px solid #ccc; 
+    border-radius: 8px; 
+    width: 220px; 
+    font-size: 16px;
+    box-sizing: border-box;
+}
 
-    #game-controls { 
-        margin: 20px 0; 
-        background: rgba(255,255,255,0.8);
-        display: inline-flex;     /* 수평/수직 정렬을 위해 flex로 변경 */
-        flex-direction: column;   /* 요소를 세로로 배치 */
-        align-items: center;      /* 가운데 정렬 */
-        gap: 10px;                /* 입력창과 버튼 사이의 간격 */
-        padding: 20px;
-        border-radius: 10px;
-        position: relative;
-        z-index: 20;
-    }
+#startBtn { 
+    padding: 12px; 
+    width: 220px; 
+    background: #4caf50; 
+    color: #fff; 
+    border: none; 
+    border-radius: 8px; 
+    font-weight: bold; 
+    font-size: 18px;
+    cursor: pointer;
+    box-sizing: border-box;
+}
 
-    input#username { padding: 8px; border: 1px solid #ccc; border-radius: 4px; width: 150px; }
-    button { padding: 8px 16px; cursor: pointer; border-radius: 4px; border: 1px solid #999; background: #fff; }
-    #startBtn { background: #4caf50; color: #fff; border: none; font-weight: bold; }
+/* 게임 보드 및 기타 스타일 (기존 유지) */
+#board {
+    display: grid;
+    grid-template-columns: repeat(15, 52px);
+    grid-template-rows: repeat(10, 52px);
+    justify-content: center;
+    margin: 20px auto;
+    border: 4px solid #333; 
+    width: max-content;
+    background: rgba(255, 255, 255, 0.96);
+    user-select: none;
+    position: relative;
+    z-index: 15;
+    box-shadow: 0 0 30px rgba(0,0,0,0.15);
+}
 
-    /* 게임 보드: 배경 사과가 커졌으므로 보드를 더 확실히 띄움 */
-    #board {
-        display: grid;
-        grid-template-columns: repeat(15, 52px);
-        grid-template-rows: repeat(10, 52px);
-        justify-content: center;
-        margin: 20px auto;
-        border: 4px solid #333; 
-        width: max-content;
-        background: rgba(255, 255, 255, 0.96); /* 보드판을 더 선명하게 */
-        user-select: none;
-        position: relative;
-        z-index: 15;
-        box-shadow: 0 0 30px rgba(0,0,0,0.15);
-    }
+.cell {
+    width: 52px; height: 52px;
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+}
 
-    .cell {
-        width: 52px; height: 52px;
-        display: flex; align-items: center; justify-content: center;
-        position: relative;
-    }
+.cell img {
+    position: absolute; width: 90%; height: 90%;
+    object-fit: contain;
+    opacity: 0.7; 
+    z-index: 0; pointer-events: none;
+}
 
-    .cell img {
-        position: absolute; width: 90%; height: 90%;
-        object-fit: contain;
-        opacity: 0.7; 
-        z-index: 0; pointer-events: none;
-    }
+.cell span {
+    position: relative; z-index: 1;
+    color: #000; font-size: 24px; font-weight: bold;
+    text-shadow: 2px 2px 0 #fff, -2px -2px 0 #fff, 2px -2px 0 #fff, -2px 2px 0 #fff;
+}
 
-    .cell span {
-        position: relative; z-index: 1;
-        color: #000; font-size: 24px; font-weight: bold;
-        text-shadow: 2px 2px 0 #fff, -2px -2px 0 #fff, 2px -2px 0 #fff, -2px 2px 0 #fff;
-    }
+.selected {
+    background-color: rgba(76, 175, 80, 0.3);
+    outline: 2px solid #4caf50;
+    z-index: 5;
+}
 
-    .selected {
-        background-color: rgba(76, 175, 80, 0.3);
-        outline: 2px solid #4caf50;
-        z-index: 5;
-    }
+#info-panel { 
+    font-size: 20px; 
+    margin-bottom: 10px; 
+    font-weight: bold; 
+    position: relative; 
+    z-index: 20;
+    background: rgba(255,255,255,0.8);
+    display: inline-block;
+    padding: 5px 15px;
+    border-radius: 20px;
+}
 
-    #info-panel { 
-        font-size: 20px; 
-        margin-bottom: 10px; 
-        font-weight: bold; 
-        position: relative; 
-        z-index: 20;
-        background: rgba(255,255,255,0.8);
-        display: inline-block;
-        padding: 5px 15px;
-        border-radius: 20px;
-    }
+#end {
+    display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.9); color: #fff;
+    flex-direction: column; align-items: center; justify-content: center; z-index: 100;
+}
 
-    /* 랭킹 모달 창 */
-    #end {
-        display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0,0,0,0.9); color: #fff;
-        flex-direction: column; align-items: center; justify-content: center; z-index: 100;
-    }
+#rankingBox {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 20px; border-radius: 10px;
+    width: 280px; margin-top: 15px;
+}
 
-    #rankingBox {
-        background: rgba(255, 255, 255, 0.1);
-        padding: 20px; border-radius: 10px;
-        width: 280px; margin-top: 15px;
-    }
-
-    .rank-item {
-        display: flex; justify-content: space-between;
-        padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.1);
-    }
+.rank-item {
+    display: flex; justify-content: space-between;
+    padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.1);
+}
 </style>
 </head>
 <body>
