@@ -35,8 +35,11 @@
     #game-controls { 
         margin: 20px 0; 
         background: rgba(255,255,255,0.8);
-        display: inline-block;
-        padding: 10px;
+        display: inline-flex;     /* 수평/수직 정렬을 위해 flex로 변경 */
+        flex-direction: column;   /* 요소를 세로로 배치 */
+        align-items: center;      /* 가운데 정렬 */
+        gap: 10px;                /* 입력창과 버튼 사이의 간격 */
+        padding: 20px;
         border-radius: 10px;
         position: relative;
         z-index: 20;
