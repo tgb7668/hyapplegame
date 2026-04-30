@@ -7,14 +7,11 @@
 <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
-    /* PC에서 배경 미출력 문제를 방지하기 위한 전용 배경 레이어 */
     #bg-container {
         position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-image: url('background.png'); /* 🌟 배경 파일명 확인 */
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background-image: url('background.png'); 
         background-repeat: no-repeat;
         background-position: center center;
         background-size: cover;
@@ -49,6 +46,13 @@
         box-shadow: 0 4px 15px rgba(0,0,0,0.1);
     }
 
+    /* 초기 대기 화면 컨테이너 */
+    #start-screen {
+        display: block;
+        position: relative;
+        z-index: 20;
+    }
+
     #game-controls { 
         display: flex;
         flex-direction: column;
@@ -58,18 +62,36 @@
         background: rgba(255,255,255,0.9);
         padding: 30px;
         border-radius: 15px;
-        position: relative;
-        z-index: 20;
         width: fit-content;
         box-shadow: 0 4px 15px rgba(0,0,0,0.1);
     }
 
-    /* 초기 화면 BGM 활성화 안내 문구 */
-    #bgm-notice {
-        font-size: 12px;
-        color: #666;
-        margin-top: -5px;
+    /* 🌟 초기 화면 왼쪽 하단 랭킹판 스타일 */
+    #main-ranking {
+        position: fixed;
+        left: 20px;
+        bottom: 20px;
+        width: 250px;
+        max-height: 300px;
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 15px;
+        padding: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        z-index: 30;
+        text-align: left;
+        overflow-y: auto;
     }
+
+    #main-ranking h4 {
+        margin-bottom: 10px;
+        color: #e91e63;
+        border-bottom: 2px solid #fce4ec;
+        padding-bottom: 5px;
+        font-size: 16px;
+    }
+
+    .rank-item { display: flex; justify-content: space-between; padding: 4px 0; font-size: 14px; border-bottom: 1px solid #eee; }
+    .rank-item:last-child { border-bottom: none; }
 
     input#username { padding: 12px; border: 1px solid #ccc; border-radius: 8px; width: 220px; font-size: 16px; outline: none; }
     #startBtn { padding: 12px; width: 220px; background: #4caf50; color: #fff; border: none; border-radius: 8px; font-weight: bold; font-size: 18px; cursor: pointer; }
@@ -98,18 +120,37 @@
     .selected { background-color: rgba(76, 175, 80, 0.5); outline: 3px solid #4caf50; z-index: 5; }
 
     #end { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); color: #fff; flex-direction: column; align-items: center; justify-content: center; z-index: 100; }
+
+    /* 모바일 대응: 랭킹판 위치 및 크기 조정 */
+    @media (max-width: 600px) {
+        #main-ranking {
+            position: static;
+            margin: 20px auto;
+            width: 90%;
+            max-width: 300px;
+        }
+    }
 </style>
 </head>
-<body onclick="handleFirstClick()"> <!-- 첫 클릭 시 BGM 재생을 유도 -->
+<body onclick="handleFirstClick()">
 
-<div id="bg-container"></div> <!-- PC 배경 로딩용 레이어 -->
+<div id="bg-container"></div>
 
 <h2>🍎 흐융사과게임 🍎</h2>
 
-<div id="game-controls">
-    <input id="username" placeholder="닉네임 입력">
-    <button id="startBtn">게임 시작</button>
-    <p id="bgm-notice">화면을 클릭하면 음악이 시작됩니다 🎵</p>
+<!-- 초기 화면 영역 -->
+<div id="start-screen">
+    <div id="game-controls">
+        <input id="username" placeholder="닉네임 입력">
+        <button id="startBtn">게임 시작</button>
+        <p style="font-size:12px; color:#666;">클릭하면 음악이 시작됩니다 🎵</p>
+    </div>
+
+    <!-- 왼쪽 하단 랭킹판 -->
+    <div id="main-ranking">
+        <h4>🏆 실시간 랭킹 TOP 10</h4>
+        <div id="main-ranking-list">로딩 중...</div>
+    </div>
 </div>
 
 <div id="game" style="display:none">
@@ -122,12 +163,11 @@
 <div id="end">
     <h3 id="endMsg">게임 종료!</h3>
     <div id="finalScore" style="font-size: 22px; margin-bottom: 10px;"></div>
-    <button onclick="location.reload()" style="margin-top: 20px; padding: 10px 20px;">다시 시작</button>
+    <button onclick="location.reload()" style="margin-top: 20px; padding: 10px 20px;">메뉴로 돌아가기</button>
 </div>
 
-<!-- 오디오 파일 설정 -->
 <audio id="bgm" src="bgm.mp3" loop></audio>
-<audio id="sfx-score" src="score.mp3"></audio> <!-- 🌟 점수 획득 효과음 파일명 -->
+<audio id="sfx-score" src="score.mp3"></audio>
 
 <script>
 const RANKING_URL = "https://script.google.com/macros/s/AKfycbyYXtYHm6DJIKDuyy1DhuN1n4Qmf3mk5X8lE36Za5-05uGT1rAJ8HeKkPGLKsYX_enGlg/exec";
@@ -142,23 +182,37 @@ let bgmStarted = false;
 const bgm = document.getElementById("bgm");
 const sfxScore = document.getElementById("sfx-score");
 
-// 브라우저 정책상 첫 상호작용(클릭 등)이 있어야 소리가 출력됩니다.
+// 페이지 로드 시 랭킹 먼저 가져오기
+window.onload = fetchMainRanking;
+
+async function fetchMainRanking() {
+    try {
+        const res = await fetch(RANKING_URL);
+        const data = await res.json();
+        let html = "";
+        data.slice(0, 10).forEach((item, i) => {
+            html += `<div class="rank-item"><span>${i + 1}. ${item.name}</span><strong>${item.score}</strong></div>`;
+        });
+        document.getElementById("main-ranking-list").innerHTML = html || "기록이 없습니다.";
+    } catch (e) {
+        document.getElementById("main-ranking-list").textContent = "랭킹 로드 실패";
+    }
+}
+
 function handleFirstClick() {
     if (!bgmStarted) {
         bgm.play().catch(() => {});
         bgmStarted = true;
-        document.getElementById("bgm-notice").style.display = "none";
     }
 }
 
 document.getElementById("startBtn").onclick = (e) => {
-    e.stopPropagation(); // body의 handleFirstClick 중복 방지
+    e.stopPropagation();
     const name = document.getElementById("username").value;
     if (!name) { alert("닉네임을 입력해 주세요!"); return; }
     
-    handleFirstClick(); // 시작 버튼 클릭 시에도 BGM 체크
-    
-    document.getElementById("game-controls").style.display = "none";
+    handleFirstClick();
+    document.getElementById("start-screen").style.display = "none";
     document.getElementById("game").style.display = "block";
     init();
     startTimer();
@@ -189,7 +243,7 @@ function init() {
 }
 
 function handleStart(e) {
-    if (gameOver || !document.getElementById("game").style.display === "block") return;
+    if (gameOver || document.getElementById("game").style.display === "none") return;
     const clientX = e.clientX || (e.touches && e.touches[0].clientX);
     const clientY = e.clientY || (e.touches && e.touches[0].clientY);
     const cell = document.elementFromPoint(clientX, clientY)?.closest('.cell');
@@ -217,12 +271,9 @@ function handleEnd() {
     if (!isDragging) return;
     isDragging = false;
     const sum = selected.reduce((a, [r, c]) => a + board[r][c], 0);
-    
     if (sum === TARGET) {
-        // 점수 획득 시 효과음 재생
         sfxScore.currentTime = 0; 
         sfxScore.play().catch(() => {});
-
         selected.forEach(([r, c]) => {
             board[r][c] = 0;
             cells[r * COLS + c].querySelector("span").textContent = "";
@@ -280,6 +331,11 @@ async function endGame() {
     const nickname = document.getElementById("username").value;
     document.getElementById("end").style.display = "flex";
     document.getElementById("finalScore").textContent = nickname + "님의 최종 점수: " + score;
+    
+    // 점수 전송
+    try {
+        await fetch(`${RANKING_URL}?name=${encodeURIComponent(nickname)}&score=${score}`);
+    } catch (e) {}
 }
 
 function resizeBoard() {
