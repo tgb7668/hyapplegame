@@ -5,31 +5,30 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>🍎 흐융사과게임 🍎</title>
 <style>
-    /* 1. 기본 스타일 초기화 */
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
-    html, body {
+    /* PC에서 배경 미출력 문제를 방지하기 위한 전용 배경 레이어 */
+    #bg-container {
+        position: fixed;
+        top: 0;
+        left: 0;
         width: 100%;
         height: 100%;
+        background-image: url('background.png'); /* 🌟 배경 파일명 확인 */
+        background-repeat: no-repeat;
+        background-position: center center;
+        background-size: cover;
+        z-index: -2;
     }
 
     body {
         font-family: 'Malgun Gothic', sans-serif;
         text-align: center;
-        
-        /* 🌟 배경 설정 강화: 이미지 경로를 다시 확인해 주세요 (background.png) */
-        background-color: #ffffff;
-        background-image: url('background.png'); 
-        background-repeat: no-repeat;
-        background-position: center center;
-        background-size: cover; 
-        background-attachment: fixed; /* PC에서 고정 효과를 다시 활성화 */
-
+        min-height: 100vh;
         overflow-x: hidden;
-        display: block;
+        background-color: #ffffff;
     }
 
-    /* 2. 배경 대비를 위한 오버레이 */
     body::before {
         content: "";
         position: fixed;
@@ -38,7 +37,6 @@
         z-index: -1;
     }
 
-    /* 3. UI 컴포넌트 */
     h2 { 
         display: block; 
         margin: 40px auto 20px auto; 
@@ -49,7 +47,6 @@
         position: relative;
         z-index: 20;
         box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        font-size: 28px;
     }
 
     #game-controls { 
@@ -67,20 +64,19 @@
         box-shadow: 0 4px 15px rgba(0,0,0,0.1);
     }
 
-    input#username { padding: 12px; border: 1px solid #ccc; border-radius: 8px; width: 220px; font-size: 16px; outline: none; }
-    #startBtn { padding: 12px; width: 220px; background: #4caf50; color: #fff; border: none; border-radius: 8px; font-weight: bold; font-size: 18px; cursor: pointer; transition: 0.2s; }
-    #startBtn:hover { background: #43a047; }
-
-    #info-panel { font-size: 22px; margin-bottom: 15px; font-weight: bold; position: relative; z-index: 20; background: rgba(255,255,255,0.95); display: inline-block; padding: 8px 20px; border-radius: 25px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-
-    #board-outer-container {
-        width: 100%;
-        display: flex;
-        justify-content: center; 
-        align-items: flex-start;
-        padding-bottom: 50px;
+    /* 초기 화면 BGM 활성화 안내 문구 */
+    #bgm-notice {
+        font-size: 12px;
+        color: #666;
+        margin-top: -5px;
     }
 
+    input#username { padding: 12px; border: 1px solid #ccc; border-radius: 8px; width: 220px; font-size: 16px; outline: none; }
+    #startBtn { padding: 12px; width: 220px; background: #4caf50; color: #fff; border: none; border-radius: 8px; font-weight: bold; font-size: 18px; cursor: pointer; }
+
+    #info-panel { font-size: 22px; margin-bottom: 15px; font-weight: bold; position: relative; z-index: 20; background: rgba(255,255,255,0.95); display: inline-block; padding: 8px 20px; border-radius: 25px; }
+
+    #board-outer-container { width: 100%; display: flex; justify-content: center; align-items: flex-start; padding-bottom: 50px; }
     #board {
         display: grid;
         grid-template-columns: repeat(15, 52px);
@@ -102,17 +98,18 @@
     .selected { background-color: rgba(76, 175, 80, 0.5); outline: 3px solid #4caf50; z-index: 5; }
 
     #end { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); color: #fff; flex-direction: column; align-items: center; justify-content: center; z-index: 100; }
-    #rankingBox { background: rgba(255, 255, 255, 0.1); padding: 20px; border-radius: 10px; width: 280px; margin-top: 15px; }
-    .rank-item { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.1); }
 </style>
 </head>
-<body>
+<body onclick="handleFirstClick()"> <!-- 첫 클릭 시 BGM 재생을 유도 -->
+
+<div id="bg-container"></div> <!-- PC 배경 로딩용 레이어 -->
 
 <h2>🍎 흐융사과게임 🍎</h2>
 
 <div id="game-controls">
     <input id="username" placeholder="닉네임 입력">
     <button id="startBtn">게임 시작</button>
+    <p id="bgm-notice">화면을 클릭하면 음악이 시작됩니다 🎵</p>
 </div>
 
 <div id="game" style="display:none">
@@ -125,14 +122,12 @@
 <div id="end">
     <h3 id="endMsg">게임 종료!</h3>
     <div id="finalScore" style="font-size: 22px; margin-bottom: 10px;"></div>
-    <div id="rankingBox">
-        <h4 style="margin:0 0 10px 0; color: #ffeb3b;">🌍 실시간 온라인 TOP 10</h4>
-        <div id="rankingList">데이터 로딩 중...</div>
-    </div>
     <button onclick="location.reload()" style="margin-top: 20px; padding: 10px 20px;">다시 시작</button>
 </div>
 
+<!-- 오디오 파일 설정 -->
 <audio id="bgm" src="bgm.mp3" loop></audio>
+<audio id="sfx-score" src="score.mp3"></audio> <!-- 🌟 점수 획득 효과음 파일명 -->
 
 <script>
 const RANKING_URL = "https://script.google.com/macros/s/AKfycbyYXtYHm6DJIKDuyy1DhuN1n4Qmf3mk5X8lE36Za5-05uGT1rAJ8HeKkPGLKsYX_enGlg/exec";
@@ -142,18 +137,32 @@ const ROWS = 10, COLS = 15, TARGET = 10;
 let board = [], cells = [], selected = [];
 let score = 0, time = 120, timerInterval, gameOver = false;
 let isDragging = false, startCell = null, endCell = null;
+let bgmStarted = false;
 
 const bgm = document.getElementById("bgm");
+const sfxScore = document.getElementById("sfx-score");
 
-document.getElementById("startBtn").onclick = () => {
+// 브라우저 정책상 첫 상호작용(클릭 등)이 있어야 소리가 출력됩니다.
+function handleFirstClick() {
+    if (!bgmStarted) {
+        bgm.play().catch(() => {});
+        bgmStarted = true;
+        document.getElementById("bgm-notice").style.display = "none";
+    }
+}
+
+document.getElementById("startBtn").onclick = (e) => {
+    e.stopPropagation(); // body의 handleFirstClick 중복 방지
     const name = document.getElementById("username").value;
     if (!name) { alert("닉네임을 입력해 주세요!"); return; }
+    
+    handleFirstClick(); // 시작 버튼 클릭 시에도 BGM 체크
+    
     document.getElementById("game-controls").style.display = "none";
     document.getElementById("game").style.display = "block";
     init();
     startTimer();
     setTimeout(resizeBoard, 50);
-    bgm.play().catch(() => {});
 };
 
 function init() {
@@ -180,7 +189,7 @@ function init() {
 }
 
 function handleStart(e) {
-    if (gameOver) return;
+    if (gameOver || !document.getElementById("game").style.display === "block") return;
     const clientX = e.clientX || (e.touches && e.touches[0].clientX);
     const clientY = e.clientY || (e.touches && e.touches[0].clientY);
     const cell = document.elementFromPoint(clientX, clientY)?.closest('.cell');
@@ -208,7 +217,12 @@ function handleEnd() {
     if (!isDragging) return;
     isDragging = false;
     const sum = selected.reduce((a, [r, c]) => a + board[r][c], 0);
+    
     if (sum === TARGET) {
+        // 점수 획득 시 효과음 재생
+        sfxScore.currentTime = 0; 
+        sfxScore.play().catch(() => {});
+
         selected.forEach(([r, c]) => {
             board[r][c] = 0;
             cells[r * COLS + c].querySelector("span").textContent = "";
@@ -263,42 +277,22 @@ function startTimer() {
 async function endGame() {
     gameOver = true;
     clearInterval(timerInterval);
-    bgm.pause();
     const nickname = document.getElementById("username").value;
     document.getElementById("end").style.display = "flex";
-    document.getElementById("finalScore").textContent = nickname + "님의 점수: " + score;
-    try {
-        const res = await fetch(`${RANKING_URL}?name=${encodeURIComponent(nickname)}&score=${score}`);
-        const data = await res.json();
-        let html = "";
-        data.forEach((item, i) => {
-            html += `<div class="rank-item"><span>${i + 1}위. ${item.name}</span><span style="color:#4caf50;">${item.score}점</span></div>`;
-        });
-        document.getElementById("rankingList").innerHTML = html || "데이터 로딩 실패";
-    } catch (e) {
-        document.getElementById("rankingList").textContent = "랭킹 로드 실패";
-    }
+    document.getElementById("finalScore").textContent = nickname + "님의 최종 점수: " + score;
 }
 
 function resizeBoard() {
     const b = document.getElementById('board');
-    const container = document.getElementById('game');
-    if (!b || container.style.display === 'none') return;
     const winW = window.innerWidth;
-    const boardW = 788; 
-    const boardH = 528; 
-    if (winW < boardW) {
-        const scale = (winW * 0.95) / boardW;
-        b.style.transform = `scale(${scale})`;
-        b.style.marginBottom = `-${boardH - (boardH * scale)}px`;
-    } else {
-        b.style.transform = `scale(1)`;
-        b.style.marginBottom = "20px";
+    if (!b || winW >= 788) {
+        if(b) b.style.transform = `scale(1)`;
+        return;
     }
+    const scale = (winW * 0.95) / 788;
+    b.style.transform = `scale(${scale})`;
 }
-
 window.addEventListener('resize', resizeBoard);
-window.addEventListener('load', resizeBoard);
 </script>
 </body>
 </html>
