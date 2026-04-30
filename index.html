@@ -169,6 +169,31 @@ input#username {
         background-position: left -30px center, right -30px center, center bottom -50px;
     }
 }
+   /* 게임 보드 기본 설정 */
+#board {
+    display: grid;
+    grid-template-columns: repeat(15, 52px);
+    grid-template-rows: repeat(10, 52px);
+    justify-content: center;
+    margin: 20px auto; /* 중앙 배치 */
+    border: 4px solid #333; 
+    width: max-content;
+    background: rgba(255, 255, 255, 0.96);
+    user-select: none;
+    position: relative;
+    z-index: 15;
+    /* 🌟 배율 조정 시 기준점을 중앙으로 설정 */
+    transform-origin: top center; 
+    touch-action: none;
+}
+
+/* 모바일 전용 추가 보정 */
+@media (max-width: 768px) {
+    #board-outer-container {
+        min-height: 550px; /* 축소된 보드가 들어갈 충분한 높이 확보 */
+        align-items: flex-start;
+    }
+}
 </style>
 </head>
 <body>
@@ -182,7 +207,10 @@ input#username {
 
 <div id="game" style="display:none">
     <div id="info-panel">⏰ <span id="timer">120</span> | 🏆 점수: <span id="score">0</span></div>
-    <div id="board"></div>
+    <!-- 🌟 중앙 정렬을 위한 컨테이너 추가 -->
+    <div id="board-outer-container" style="width: 100%; overflow: visible; display: flex; justify-content: center;">
+        <div id="board"></div>
+    </div>
 </div>
 
 <div id="end">
