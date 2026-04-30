@@ -44,43 +44,31 @@
         width: fit-content;        
     }
 
-    input#username { 
-        padding: 12px; 
-        border: 1px solid #ccc; 
-        border-radius: 8px; 
-        width: 220px; 
-        font-size: 16px;
-        box-sizing: border-box;
+    input#username { padding: 12px; border: 1px solid #ccc; border-radius: 8px; width: 220px; font-size: 16px; box-sizing: border-box; }
+    #startBtn { padding: 12px; width: 220px; background: #4caf50; color: #fff; border: none; border-radius: 8px; font-weight: bold; font-size: 18px; cursor: pointer; box-sizing: border-box; }
+
+    /* 🌟 핵심 수정: PC/모바일 모두 중앙 정렬 보장 */
+    #board-outer-container {
+        width: 100%;
+        display: flex;
+        justify-content: center; /* 가로 중앙 정렬 */
+        align-items: flex-start;
+        padding-bottom: 50px;
     }
 
-    #startBtn { 
-        padding: 12px; 
-        width: 220px; 
-        background: #4caf50; 
-        color: #fff; 
-        border: none; 
-        border-radius: 8px; 
-        font-weight: bold; 
-        font-size: 18px;
-        cursor: pointer;
-        box-sizing: border-box;
-    }
-
-    /* 🌟 게임 보드: 중복 제거 및 설정 최적화 */
     #board {
         display: grid;
         grid-template-columns: repeat(15, 52px);
         grid-template-rows: repeat(10, 52px);
-        justify-content: center;
-        margin: 20px 0; /* JS에서 가로 margin 제어 */
         border: 4px solid #333; 
         width: max-content;
         background: rgba(255, 255, 255, 0.96);
         user-select: none;
         position: relative;
         z-index: 15;
-        transform-origin: top center; 
+        transform-origin: top center; /* 축소 시 중앙 기준 */
         touch-action: none;
+        margin: 20px 0; /* 가로 마진은 flex가 담당 */
     }
 
     .cell { width: 52px; height: 52px; display: flex; align-items: center; justify-content: center; position: relative; }
@@ -93,11 +81,6 @@
     #end { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); color: #fff; flex-direction: column; align-items: center; justify-content: center; z-index: 100; }
     #rankingBox { background: rgba(255, 255, 255, 0.1); padding: 20px; border-radius: 10px; width: 280px; margin-top: 15px; }
     .rank-item { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.1); }
-
-    @media (max-width: 768px) {
-        body { background-size: 50% auto, 50% auto, 70% auto; }
-        #board-outer-container { min-height: 400px; display: flex; justify-content: center; }
-    }
 </style>
 </head>
 <body>
@@ -139,7 +122,6 @@ let isDragging = false, startCell = null, endCell = null;
 
 const bgm = document.getElementById("bgm");
 
-// 🌟 시작 버튼 클릭 시 초기화 및 리사이즈 즉시 실행
 document.getElementById("startBtn").onclick = () => {
     const name = document.getElementById("username").value;
     if (!name) { alert("닉네임을 입력해 주세요!"); return; }
@@ -147,7 +129,7 @@ document.getElementById("startBtn").onclick = () => {
     document.getElementById("game").style.display = "block";
     init();
     startTimer();
-    setTimeout(resizeBoard, 50); // 화면 그려진 후 보정
+    setTimeout(resizeBoard, 50);
     bgm.play().catch(() => {});
 };
 
@@ -174,7 +156,6 @@ function init() {
     }
 }
 
-// 🌟 통합 이벤트 핸들러 (중복 리스너 제거)
 function handleStart(e) {
     if (gameOver) return;
     const clientX = e.clientX || (e.touches && e.touches[0].clientX);
@@ -217,7 +198,6 @@ function handleEnd() {
     selected = [];
 }
 
-// 이벤트 리스너 등록
 document.addEventListener("mousedown", handleStart);
 document.addEventListener("mousemove", handleMove);
 window.addEventListener("mouseup", handleEnd);
@@ -280,22 +260,23 @@ async function endGame() {
     }
 }
 
-// 🌟 리사이즈 로직 최적화
+// 🌟 리사이즈 로직 수정: PC에서는 배율 조정 안 함
 function resizeBoard() {
     const board = document.getElementById('board');
-    if (!board || document.getElementById('game').style.display === 'none') return;
+    const container = document.getElementById('game');
+    if (!board || container.style.display === 'none') return;
 
     const winW = window.innerWidth;
-    const boardW = 788; // 15cols * 52px + borders
-    const boardH = 528; // 10rows * 52px + borders
+    const boardW = 788; // 실제 보드 너비
+    const boardH = 528; // 실제 보드 높이
 
+    // 모바일(작은 화면)일 때만 배율 조정
     if (winW < boardW) {
         const scale = (winW * 0.95) / boardW;
         board.style.transform = `scale(${scale})`;
-        // 축소로 인한 하단 여백 보정
-        const currentH = boardH * scale;
-        board.style.marginBottom = `-${boardH - currentH}px`;
+        board.style.marginBottom = `-${boardH - (boardH * scale)}px`;
     } else {
+        // PC 등 충분한 화면 크기에서는 원본 유지
         board.style.transform = `scale(1)`;
         board.style.marginBottom = "20px";
     }
