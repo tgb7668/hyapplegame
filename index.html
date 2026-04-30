@@ -138,17 +138,35 @@ input#username {
     display: flex; justify-content: space-between;
     padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.1);
 }
-   @media (max-width: 768px) {
-    #board {
-        /* 화면 너비에 맞춰 보드 크기 축소 */
-        transform: scale(0.6); 
-        transform-origin: top center;
-        margin-top: 10px;
+   /* 모바일 최적화 미디어 쿼리 */
+@media (max-width: 768px) {
+    h2 {
+        font-size: 1.2rem;
+        margin-top: 20px;
+        padding: 8px 20px;
     }
-    
+
+    #game-controls {
+        padding: 20px;
+        width: 80%; /* 모바일에서 박스 너비 조정 */
+    }
+
+    input#username, #startBtn {
+        width: 100%; /* 부모 너비에 맞춤 */
+        max-width: 250px;
+    }
+
+    #board {
+        /* 자바스크립트에서 transform을 제어하므로 여기선 기본 배치만 설정 */
+        margin-left: auto;
+        margin-right: auto;
+        touch-action: none; /* 터치 시 화면 밀림 방지 */
+    }
+
     body {
-        /* 모바일에서 배경 사과가 너무 크면 방해되므로 크기 조정 */
-        background-size: 60% auto, 60% auto, 80% auto;
+        /* 모바일 배경 사과 크기 및 투명도 조정 */
+        background-size: 50% auto, 50% auto, 70% auto;
+        background-position: left -30px center, right -30px center, center bottom -50px;
     }
 }
 </style>
@@ -366,6 +384,25 @@ async function endGame() {
         document.getElementById("rankingList").textContent = "랭킹 로드 실패";
     }
 }
+   function resizeBoard() {
+    const board = document.getElementById('board');
+    const containerWidth = window.innerWidth * 0.95; // 화면 너비의 95% 사용
+    const boardWidth = 780; // 원래 보드 너비 (15열 * 52px)
+
+    if (containerWidth < boardWidth) {
+        const scale = containerWidth / boardWidth;
+        board.style.transform = `scale(${scale})`;
+        board.style.transformOrigin = 'top center';
+        board.style.margin = '10px auto';
+    } else {
+        board.style.transform = 'scale(1)';
+        board.style.margin = '20px auto';
+    }
+}
+
+// 초기 실행 및 화면 크기 변경 시 실행
+window.addEventListener('load', resizeBoard);
+window.addEventListener('resize', resizeBoard);
 </script>
 </body>
 </html>
