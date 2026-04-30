@@ -414,19 +414,43 @@ async function endGame() {
 }
    function resizeBoard() {
     const board = document.getElementById('board');
-    const containerWidth = window.innerWidth * 0.95; // 화면 너비의 95% 사용
-    const boardWidth = 780; // 원래 보드 너비 (15열 * 52px)
+    if (!board) return;
+
+    const containerWidth = window.innerWidth * 0.95; // 화면 너비의 95%
+    const boardWidth = 780; // 원본 보드 너비 (15열 * 52px)
 
     if (containerWidth < boardWidth) {
         const scale = containerWidth / boardWidth;
+        
+        // 🌟 transform으로 크기를 줄이고, 가로 위치를 강제로 중앙으로 보정
         board.style.transform = `scale(${scale})`;
-        board.style.transformOrigin = 'top center';
-        board.style.margin = '10px auto';
+        
+        // 축소되면서 발생하는 좌우 빈 공간을 보정하기 위해 마진 조정
+        const scaledHeight = 520 * scale; 
+        board.style.marginBottom = `-${520 - scaledHeight}px`; 
     } else {
         board.style.transform = 'scale(1)';
-        board.style.margin = '20px auto';
+        board.style.marginBottom = '20px';
     }
 }
+
+// 게임 시작 시에도 즉시 배율을 계산하도록 수정
+document.getElementById("startBtn").onclick = () => {
+    const name = document.getElementById("username").value;
+    if (!name) { alert("닉네임을 입력해 주세요!"); return; }
+    document.getElementById("game-controls").style.display = "none";
+    document.getElementById("game").style.display = "block";
+    init();
+    startTimer();
+    
+    // 🌟 화면 표시 직후 배율 재계산
+    setTimeout(resizeBoard, 10); 
+    
+    bgm.play().catch(() => {});
+};
+
+window.addEventListener('load', resizeBoard);
+window.addEventListener('resize', resizeBoard);
 
 // 초기 실행 및 화면 크기 변경 시 실행
 window.addEventListener('load', resizeBoard);
