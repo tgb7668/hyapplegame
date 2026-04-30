@@ -138,6 +138,19 @@ input#username {
     display: flex; justify-content: space-between;
     padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.1);
 }
+   @media (max-width: 768px) {
+    #board {
+        /* 화면 너비에 맞춰 보드 크기 축소 */
+        transform: scale(0.6); 
+        transform-origin: top center;
+        margin-top: 10px;
+    }
+    
+    body {
+        /* 모바일에서 배경 사과가 너무 크면 방해되므로 크기 조정 */
+        background-size: 60% auto, 60% auto, 80% auto;
+    }
+}
 </style>
 </head>
 <body>
@@ -248,6 +261,65 @@ window.addEventListener("mouseup", () => {
     cells.forEach(c => c.classList.remove("selected"));
     selected = [];
 });
+
+   // --- 기존 마우스 이벤트 유지 ---
+document.addEventListener("mousedown", handleStart);
+document.addEventListener("mousemove", handleMove);
+window.addEventListener("mouseup", handleEnd);
+
+// --- 🌟 모바일 터치 이벤트 추가 ---
+document.addEventListener("touchstart", (e) => {
+    // 터치 시 화면이 스크롤되거나 새로고침되는 현상 방지
+    if (e.target.closest('.cell')) e.preventDefault(); 
+    handleStart(e.touches[0]); 
+}, { passive: false });
+
+document.addEventListener("touchmove", (e) => {
+    if (isDragging) e.preventDefault(); 
+    handleMove(e.touches[0]);
+}, { passive: false });
+
+window.addEventListener("touchend", handleEnd);
+
+// --- 공통 로직 함수화 (중복 방지) ---
+
+function handleStart(e) {
+    if (gameOver) return;
+    const cell = document.elementFromPoint(e.clientX, e.clientY)?.closest('.cell');
+    if (!cell) return;
+    isDragging = true;
+    startCell = [+cell.dataset.r, +cell.dataset.c];
+    endCell = startCell;
+    update();
+}
+
+function handleMove(e) {
+    if (!isDragging || gameOver) return;
+    const el = document.elementFromPoint(e.clientX, e.clientY);
+    const cell = el?.closest('.cell');
+    if (!cell) return;
+    const r = +cell.dataset.r, c = +cell.dataset.c;
+    if (endCell[0] === r && endCell[1] === c) return;
+    endCell = [r, c];
+    update();
+}
+
+function handleEnd() {
+    if (!isDragging) return;
+    isDragging = false;
+    const sum = selected.reduce((a, [r, c]) => a + board[r][c], 0);
+    if (sum === TARGET) {
+        selected.forEach(([r, c]) => {
+            board[r][c] = 0;
+            cells[r * COLS + c].querySelector("span").textContent = "";
+            cells[r * COLS + c].querySelector("img").style.opacity = "0.05";
+        });
+        score += selected.length;
+        document.getElementById("score").textContent = score;
+    }
+    cells.forEach(c => c.classList.remove("selected"));
+    selected = [];
+}
 
 function update() {
     const [r1, c1] = startCell;
